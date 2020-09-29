@@ -1,0 +1,115 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Category1",
+            "name": "category1",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Value",
+            "name": "value",
+            "kind": "Measure"
+        },
+        {
+            "displayName": "Target 1",
+            "name": "target1",
+            "kind": "Measure"
+        },
+        {
+            "displayName": "Target 2",
+            "name": "target2",
+            "kind": "Measure"
+        }
+    ],
+    "objects": {
+        "gauge": {
+            "displayName": "Gauge",
+            "properties": {
+                "valueLabel": {
+                    "displayName": "Value Name",
+                    "description": "Name to be given to value field",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "valueTooltip": {
+                    "displayName": "Value tooltip name",
+                    "description": "Name to be given to value field",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "target1Label": {
+                    "displayName": "Target1 Name",
+                    "description": "Name to be given to target1 field",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "target1Tooltip": {
+                    "displayName": "Target1 tooltip name",
+                    "description": "Name to be given to target1 field",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "target2Label": {
+                    "displayName": "Target2 Name",
+                    "description": "Name to be given to target1 field",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "target2Tooltip": {
+                    "displayName": "Target2 tooltip name",
+                    "description": "Name to be given to target2 field",
+                    "type": {
+                        "text": true
+                    }
+                }
+            }
+        }
+    },
+    "dataViewMappings": [
+        {
+            "categorical": {
+                "categories": {
+                    "for": {
+                        "in": "category1"
+                    },
+                    "dataReductionAlgorithm": {
+                        "top": {}
+                    }
+                },
+                "values": {
+                    "select": [
+                        {
+                            "bind": {
+                                "to": "value"
+                            }
+                        },
+                        {
+                            "bind": {
+                                "to": "target1"
+                            }
+                        },
+                        {
+                            "bind": {
+                                "to": "target2"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "tooltips": {
+        "supportedTypes": {
+            "default": true,
+            "canvas": true
+        },
+        "roles": [
+            "tooltips"
+        ]
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "version": "0.1.0",
+    "configurations": [
+        {
+            "name": "Attach to Edge",
+            "port": 8080,
+            "request": "attach",
+            "type": "pwa-msedge",
+            "webRoot": "D:\\Typescript Workspace\\pBICustomGuage\\webpack.statistics.dev.html"
+        }        
+    ]
+}
