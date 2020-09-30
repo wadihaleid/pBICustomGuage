@@ -252,7 +252,7 @@ export class CustomGauge implements IVisual {
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
         this.selectionManager = options.host.createSelectionManager();
-        this.root = d3.select(options.element);
+        this.root = d3.select(options.element);        
         this.allowInteraction = options.host.allowInteractions;
     }
 
@@ -420,12 +420,15 @@ export class CustomGauge implements IVisual {
 
     private static getGaugeSize(viewport: IViewport, count: number, type: number): IViewport {
         var viewPortW = viewport.width;
-        var viewPortH = viewport.height;
+        var viewPortH = viewport.height;       
+
+        var cols = 6 ;
+        var rows = Math.round (count / cols)
 
         if (type == 0) {
             //horizontal layout.            
-            var chartH = viewPortH;
-            var chartW = (viewPortW - 10) / (count);
+            var chartH = (viewPortH-20) / rows;
+            var chartW = (viewPortW) / (cols);
             return {
                 width: chartW,
                 height: chartH
@@ -478,7 +481,7 @@ export class SingleGaugeChart implements IVisual {
             clipWidth: _clipWidth,
             enableInteraction: _enableInteraction,
             ringInset: 20,
-            ringWidth: 20,
+            ringWidth: 10,
             x: _x,
             y: _y,
             minValue: 0,
@@ -572,7 +575,7 @@ export class SingleGaugeChart implements IVisual {
         var iR = oR - this.config.ringWidth;
 
         var range = this.config.maxAngle - this.config.minAngle;
-        this.textVerticalSPacing = 20
+        this.textVerticalSPacing = 15
 
         this.root = this.config.element
             .append('svg').attr('class', 'gauge');
@@ -603,34 +606,32 @@ export class SingleGaugeChart implements IVisual {
 
         //Category label.
         this.categoryLbl = this.root.append("text")
-            .attr("transform", this.centerTranslation(this.r, oR + this.textVerticalSPacing - this.config.ringWidth))
+            .attr("transform", this.centerTranslation(this.r, oR - 2 * this.config.ringWidth))
             .attr("text-anchor", "middle")
             .attr("class", "valueLabelText")
 
         //Value
         this.currentValueLbl = this.root.append("text")
-            .attr("transform", this.centerTranslation(this.r, oR + 1.75 * this.textVerticalSPacing - this.config.ringWidth))
+            .attr("transform", this.centerTranslation(this.r, oR - 0.90 * this.config.ringWidth))
             .attr("text-anchor", "middle")
             .attr("class", "valueLabelText")
 
         // Target1
         if (this.dataViewModel.target1) {
             this.target1ValueLbl = this.root.append("text")
-                .attr("transform", this.centerTranslation(this.r, this.r + this.textVerticalSPacing))
+                .attr("transform", this.centerTranslation(this.r, iR + 1.5 * this.textVerticalSPacing))
                 .attr("text-anchor", "middle")
                 .attr("class", "valueLabelText");
-        }
-
-        //Target2
-        if (this.dataViewModel.target2) {
-            this.target2ValueLbl = this.root.append("text")
-                .attr("transform", this.centerTranslation(this.r, this.r + 1.5 * this.textVerticalSPacing))
-                .attr("text-anchor", "middle")
-                .attr("class", "valueLabelText")
-        }
+        }        
 
         this.tooltipServiceWrapper = this.createTooltipServiceWrapper(this.host.tooltipService, this.root);
     }
+
+
+    private createLayout (cols : number , charts : number){
+
+    }
+
 
     private centerTranslation(_x, _y) {
         return 'translate(' + _x + ',' + _y + ')';
@@ -646,8 +647,8 @@ export class SingleGaugeChart implements IVisual {
         var range = this.config.maxAngle - this.config.minAngle;
         var r = this.r;
 
-        var centerTx = this.centerTranslation(this.r, this.r);
-        var fillColorFn = this.getFillColor;
+        var centerTx = this.centerTranslation(this.r , 0.85*this.r);         
+        var fillColorFn = this.getFillColor;        
 
         if (this.dataViewModel.target1) {
             //Background arc.
@@ -677,11 +678,8 @@ export class SingleGaugeChart implements IVisual {
                 .attr("fill", "darkgrey")
                 .attr('d', this.arc);
         }
-
-
         //Foreground arcs.
         this.foregroundArc = this.root.append('g');
-
         this.foregroundArc.attr('class', 'arc')
             .attr('transform', centerTx);
 
