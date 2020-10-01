@@ -397,14 +397,16 @@ export class CustomGauge implements IVisual {
                     valueLabel: this.visualSettings.gauge.valueTooltip
                 },
                 color: (d, t1, t2) => {
-                    if (t2) {
-                        if ((d / t2) >= 0.99) return "green";
-                        if ((d / t1) >= 1) return "orange";
+                    if (t2) 
+                    {                        
+                        if (d / t2 >=1 || (1 - (d / t2)) <= 0.01) return "green";
+                        if ((d / t2) >= 0.95) return "orange";
                         return "red"
                     }
                     else {
-                        if ((d / t1) >= 1) return "green";
-                        return "red";
+                        if (d / t1 >=1 || (1 - (d / t1)) <= 0.01) return "green";
+                        if ((d / t1) >= 0.95) return "orange";
+                        return "red"
                     }
                 },
                 target1Gap: 100 * (value - target1) / target1,
@@ -424,6 +426,8 @@ export class CustomGauge implements IVisual {
 
         var cols = 6;
         var rows = Math.round(count / cols)
+        if (rows <= 3)
+            rows = 4;
 
         if (type == 0) {
             //horizontal layout.            
@@ -514,13 +518,13 @@ export class SingleGaugeChart implements IVisual {
     }
 
     private getFillColor(d, compRatio) {
-        if (d == 1 && compRatio === undefined)
+        if (d == -1 && compRatio === undefined)
             return '#ddd';
-        if (d < compRatio)
+        if (d < 0.95)
             return 'red';
-        if (d >= compRatio && d < 0.99)
+        if (d >= 0.95 &&  d < 0.99)
             return 'orange';
-        if (d >= 0.99)
+        if (d > 0.99)
             return 'green';
     }
 
@@ -683,9 +687,7 @@ export class SingleGaugeChart implements IVisual {
             background.selectAll('path')
                 .data([1])
                 .enter().append('path')
-                .attr("fill", (d, i) => {
-                    return fillColorFn(d, compRatio);
-                })
+                .attr("fill", "lightgrey")
                 .attr('d', this.arc);
         }
 
@@ -715,6 +717,7 @@ export class SingleGaugeChart implements IVisual {
             .attr("fill", (d, i) => {
                 return fillColorFn(d, compRatio);
             }).attr('d', this.arc)
+
         // var lg = this.root.append('g')
         //     .attr('class', 'label')
         //     .attr('transform', centerTx);

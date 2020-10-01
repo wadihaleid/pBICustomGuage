@@ -3,7 +3,7 @@
         {
             "displayName": "Category1",
             "name": "category1",
-            "kind": "Grouping"
+            "kind": "Grouping"            
         },
         {
             "displayName": "Value",
@@ -85,7 +85,7 @@
                     "select": [
                         {
                             "bind": {
-                                "to": "value"
+                                "to": "value"                                
                             }
                         },
                         {
@@ -111,5 +111,15 @@
         "roles": [
             "tooltips"
         ]
+    },
+    "sorting": {
+        "implicit": {
+            "clauses": [
+                {
+                    "role": "category1",
+                    "direction": 1
+                }
+            ]
+        }         
     }
 }
