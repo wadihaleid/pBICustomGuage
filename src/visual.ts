@@ -38,9 +38,9 @@ export interface SingleGaugeChartDataViewModel {
     category: string;
     value: number;
     target1: number;
-    target2: number;    
+    target2: number;
     numberFormatter(d): string;
-    percentageFormatter(d):string;
+    percentageFormatter(d): string;
     target1Gap: number;
     target2Gap: number;
     valueDisplayName: string;
@@ -85,7 +85,7 @@ export interface SingleGaugeChartConfig {
     labelFormat: any;
     labelInset: number;
     numberFormat: any;
-    pecentageFormat : any;
+    pecentageFormat: any;
 }
 
 export interface VisualMetaData {
@@ -252,7 +252,7 @@ export class CustomGauge implements IVisual {
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
         this.selectionManager = options.host.createSelectionManager();
-        this.root = d3.select(options.element);        
+        this.root = d3.select(options.element);
         this.allowInteraction = options.host.allowInteractions;
     }
 
@@ -385,9 +385,9 @@ export class CustomGauge implements IVisual {
                 category: labels[i],
                 value: value,
                 target1: target1,
-                target2: target2,                
+                target2: target2,
                 numberFormatter: (d) => { return "$" + d3.format(",.0f")(d); },
-                percentageFormatter: (d) => {if (d < 0) return "(" + d3.format(",.0f")(d) + "%)" ; else return d3.format(",.0f")(d) + "%" },
+                percentageFormatter: (d) => { if (d < 0) return "(" + d3.format(",.0f")(d) + "%)"; else return d3.format(",.0f")(d) + "%" },
                 valueDisplayName: this.visualSettings.gauge.valueLabel,
                 target1DisplayName: this.visualSettings.gauge.target1Label,
                 target2DisplayName: this.visualSettings.gauge.target2Label,
@@ -407,8 +407,8 @@ export class CustomGauge implements IVisual {
                         return "red";
                     }
                 },
-                target1Gap: 100*(value-target1) / target1,
-                target2Gap: 100*(value-target2) / target2,
+                target1Gap: 100 * (value - target1) / target1,
+                target2Gap: 100 * (value - target2) / target2,
                 selectionId: categorySelectionId
             }
             singleChartsArray.push(item);
@@ -420,15 +420,15 @@ export class CustomGauge implements IVisual {
 
     private static getGaugeSize(viewport: IViewport, count: number, type: number): IViewport {
         var viewPortW = viewport.width;
-        var viewPortH = viewport.height;       
+        var viewPortH = viewport.height;
 
-        var cols = 6 ;
-        var rows = Math.round (count / cols)
+        var cols = 6;
+        var rows = Math.round(count / cols)
 
         if (type == 0) {
             //horizontal layout.            
-            var chartH = (viewPortH-20) / rows;
-            var chartW = (viewPortW) / (cols);
+            var chartH = (viewPortH) / (rows + 0.5);
+            var chartW = ((viewPortW)  / (cols)) ;
             return {
                 width: chartW,
                 height: chartH
@@ -451,7 +451,6 @@ export class SingleGaugeChart implements IVisual {
     private arc: any;
     private currentValueLbl: any;
     private target1ValueLbl: any;
-    private target2ValueLbl: any;
     private categoryLbl: any;
     private textVerticalSPacing: number;
     private dataViewModel: SingleGaugeChartDataViewModel;
@@ -460,6 +459,7 @@ export class SingleGaugeChart implements IVisual {
     private tooltipServiceWrapper: ITooltipServiceWrapper;
     private host: IVisualHost;
     private targetsCount: number;
+    private catLblVertical: number;
 
     constructor(_dataViewModel: SingleGaugeChartDataViewModel, _selectionManager: ISelectionManager, _host: IVisualHost) {
         this.setDataViewModel(_dataViewModel);
@@ -493,7 +493,7 @@ export class SingleGaugeChart implements IVisual {
             labelInset: 30,
             labelFormat: d3.format('.0f'),
             numberFormat: (d) => { return "$" + d3.format(",.0f")(d); },
-            pecentageFormat : (d) => { return "(" + d3.format(",.0f")(d) + "%)" ; }
+            pecentageFormat: (d) => { return "(" + d3.format(",.0f")(d) + "%)"; }
         }
     }
 
@@ -561,6 +561,31 @@ export class SingleGaugeChart implements IVisual {
         }
     }
 
+    private wrap(text, width, _x, _y) {
+        text.each(function (d) {
+            let text = d3.select(this),
+                words = text.text().split(/\s+/).reverse(),
+                word,
+                line = [],
+                lineNumber = 0,
+                lineHeight = 1, // ems
+                x = _x,
+                y = _y,
+                dy = 1,
+                tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
+            while (word = words.pop()) {
+                line.push(word);
+                tspan.text(line.join(" "));
+                if (tspan.node().getComputedTextLength() > width) {
+                    line.pop();
+                    tspan.text(line.join(" "));
+                    line = [word];
+                    tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                }
+            }
+        });
+    }
+
     @logExceptions()
     public init(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction): void {
 
@@ -604,51 +629,49 @@ export class SingleGaugeChart implements IVisual {
         this.root.attr('height', this.config.gaugeHeight);
         this.root.attr('width', this.config.gaugeWidth);
 
-        //Category label.
+
+        this.catLblVertical = oR - 2.5 * this.config.ringWidth;
+
         this.categoryLbl = this.root.append("text")
-            .attr("transform", this.centerTranslation(this.r, oR - 2 * this.config.ringWidth))
+            .attr("transform", this.centerTranslation(this.r, this.catLblVertical))
             .attr("text-anchor", "middle")
-            .attr("class", "valueLabelText")
+            .attr("class", "valueLabelText").attr("class", "categoryText")
 
         //Value
         this.currentValueLbl = this.root.append("text")
-            .attr("transform", this.centerTranslation(this.r, oR - 0.90 * this.config.ringWidth))
+            .attr("transform", this.centerTranslation(this.r, this.catLblVertical + this.textVerticalSPacing))
             .attr("text-anchor", "middle")
             .attr("class", "valueLabelText")
 
         // Target1
         if (this.dataViewModel.target1) {
             this.target1ValueLbl = this.root.append("text")
-                .attr("transform", this.centerTranslation(this.r, iR + 1.5 * this.textVerticalSPacing))
+                .attr("transform", this.centerTranslation(this.r, this.catLblVertical + 2.5 * this.textVerticalSPacing))
                 .attr("text-anchor", "middle")
-                .attr("class", "valueLabelText");
-        }        
+                .attr("class", "valueLabelText")
+        }
 
         this.tooltipServiceWrapper = this.createTooltipServiceWrapper(this.host.tooltipService, this.root);
     }
-
-
-    private createLayout (cols : number , charts : number){
-
-    }
-
 
     private centerTranslation(_x, _y) {
         return 'translate(' + _x + ',' + _y + ')';
     }
 
+    // tslint:disable-next-line: max-func-body-length
     @logExceptions()
     public update(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction) {
 
-        this.init(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction);
+        this.init(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction);      
 
-        var lblInset = this.config.labelInset;
-        var lblFormat = this.config.labelFormat;
-        var range = this.config.maxAngle - this.config.minAngle;
-        var r = this.r;
+        var centerTx = this.centerTranslation(this.r, 0.85 * this.r);
+        var fillColorFn = this.getFillColor;
+        //outer radius
+        var oR = this.r - this.config.ringInset;
 
-        var centerTx = this.centerTranslation(this.r , 0.85*this.r);         
-        var fillColorFn = this.getFillColor;        
+        //inner radius.
+        var iR = oR - this.config.ringWidth;
+
 
         if (this.dataViewModel.target1) {
             //Background arc.
@@ -686,15 +709,12 @@ export class SingleGaugeChart implements IVisual {
         var compRatio = 1
         if (this.dataViewModel.target2)
             var compRatio = this.dataViewModel.target1 / this.dataViewModel.target2;
-
-
         this.foregroundArc.selectAll('path')
             .data(this.tickData)
             .enter().append('path')
             .attr("fill", (d, i) => {
                 return fillColorFn(d, compRatio);
-            }).attr('d', this.arc)           
-
+            }).attr('d', this.arc)
         // var lg = this.root.append('g')
         //     .attr('class', 'label')
         //     .attr('transform', centerTx);
@@ -710,19 +730,26 @@ export class SingleGaugeChart implements IVisual {
         //         return 'rotate(' + newAngle + ') translate(0,' + (lblInset - r) + ')';
         //     })
         //     .text("|");
+
+
         var valueLbl = this.scaleAndRoundValue(this.dataViewModel.value);
         var target1Lbl = this.scaleAndRoundValue(this.dataViewModel.target1);
         if (this.dataViewModel.target2)
             var target2Lbl = this.scaleAndRoundValue(this.dataViewModel.target2);
 
-        this.categoryLbl.transition().text(this.dataViewModel.category);        
+        //this.
+
+        //Category label.
+        this.categoryLbl.text(this.dataViewModel.category)
+            .call (this.wrap , 100 , 0 , this.catLblVertical - this.textVerticalSPacing - iR);
+        
 
         if (this.dataViewModel.target2) {
-            this.currentValueLbl.transition().text(this.dataViewModel.valueDisplayName + " " + this.config.numberFormat(valueLbl.Value) + valueLbl.Unit + " " + this.config.pecentageFormat(this.dataViewModel.target2Gap));
-            this.target1ValueLbl.transition().text(this.dataViewModel.target1DisplayName + " " +
+            this.currentValueLbl.text(this.dataViewModel.valueDisplayName + " " + this.config.numberFormat(valueLbl.Value) + valueLbl.Unit + " " + this.config.pecentageFormat(this.dataViewModel.target2Gap));
+            this.target1ValueLbl.text(this.dataViewModel.target1DisplayName + " " +
                 this.config.numberFormat(target1Lbl.Value) +
-                target1Lbl.Unit + " , " +
-                this.dataViewModel.target2DisplayName + " " + this.config.numberFormat(target2Lbl.Value) + target2Lbl.Unit);                
+                target1Lbl.Unit + " ," +
+                this.dataViewModel.target2DisplayName + " " + this.config.numberFormat(target2Lbl.Value) + target2Lbl.Unit);
         } else {
             this.currentValueLbl.transition().text(this.dataViewModel.valueDisplayName + " " + this.config.numberFormat(valueLbl.Value) + valueLbl.Unit + " " + this.config.pecentageFormat(this.dataViewModel.target1Gap));
             this.target1ValueLbl.transition().text(this.dataViewModel.target1DisplayName + " " +
