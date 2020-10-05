@@ -29,6 +29,7 @@ export interface SingleGaugeChartDataViewModel {
     percentageFormatter(d: any): string;
     target1Gap: number;
     target2Gap: number;
+    targetGapThreshold: number;
     valueDisplayName: string;
     target1DisplayName: string;
     target2DisplayName: string;
@@ -114,7 +115,6 @@ export declare class SingleGaugeChart implements IVisual {
     private arc;
     private currentValueLbl;
     private target1ValueLbl;
-    private target2ValueLbl;
     private categoryLbl;
     private textVerticalSPacing;
     private dataViewModel;
@@ -123,6 +123,7 @@ export declare class SingleGaugeChart implements IVisual {
     private tooltipServiceWrapper;
     private host;
     private targetsCount;
+    private catLblVertical;
     constructor(_dataViewModel: SingleGaugeChartDataViewModel, _selectionManager: ISelectionManager, _host: IVisualHost);
     private createTooltipServiceWrapper;
     private configure;
@@ -136,6 +137,7 @@ export declare class SingleGaugeChart implements IVisual {
 
      */
     private scaleAndRoundValue;
+    private wrap;
     init(_element: any, _x: any, _y: any, _size: any, _height: any, _width: any, _clipHeight: any, _clipWidth: any, _enableInteraction: any): void;
     private centerTranslation;
     update(_element: any, _x: any, _y: any, _size: any, _height: any, _width: any, _clipHeight: any, _clipWidth: any, _enableInteraction: any): void;

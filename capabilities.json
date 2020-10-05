@@ -66,6 +66,13 @@
                     "type": {
                         "text": true
                     }
+                },
+                "GapThreshold" : {
+                    "displayName": "Target achievement Percentage",
+                    "description": "Name to be given to target2 field",
+                    "type": {
+                        "numeric": true
+                    }
                 }
             }
         }

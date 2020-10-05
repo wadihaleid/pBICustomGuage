@@ -2,25 +2,36 @@ body {
   font-family: Helvetica, Arial, sans-serif;
   margin: 32px;
 }
-g.arc {
-  fill: steelblue;
+svg {
+  padding-bottom: 3px;
 }
 g.pointer {
   fill: #e85116;
   stroke: #b64011;
+}
+g.textGroup {
+  padding-top: 5px;
 }
 g.label text {
   text-anchor: middle;
   font-size: 14px;
   font-weight: bold;
   fill: #666;
+  word-wrap: break-word;
 }
 svg text {
-  padding-top: 5px;
+  padding-top: 6px;
   text-anchor: middle;
   font-size: 10px;
   font-weight: bold;
   fill: #666;
+}
+svg .categoryText {
+  padding-bottom: 5px;
+  text-anchor: middle;
+  font-size: 11px;
+  font-weight: bold;
+  fill: black;
 }
 g.gaugeBackground {
   fill: #666;

@@ -10,4 +10,5 @@ export declare class GaugeSettings {
     target2Label: string;
     target1Tooltip: string;
     target2Tooltip: string;
+    GapThreshold: number;
 }

@@ -43,6 +43,7 @@ export interface SingleGaugeChartDataViewModel {
     percentageFormatter(d): string;
     target1Gap: number;
     target2Gap: number;
+    targetGapThreshold: number;
     valueDisplayName: string;
     target1DisplayName: string;
     target2DisplayName: string;
@@ -391,20 +392,20 @@ export class CustomGauge implements IVisual {
                 valueDisplayName: this.visualSettings.gauge.valueLabel,
                 target1DisplayName: this.visualSettings.gauge.target1Label,
                 target2DisplayName: this.visualSettings.gauge.target2Label,
+                targetGapThreshold: this.visualSettings.gauge.GapThreshold,
                 tooltip: {
                     target1Label: this.visualSettings.gauge.target1Tooltip,
                     target2Label: this.visualSettings.gauge.target2Tooltip,
                     valueLabel: this.visualSettings.gauge.valueTooltip
                 },
                 color: (d, t1, t2) => {
-                    if (t2) 
-                    {                        
-                        if (d / t2 >=1 || (1 - (d / t2)) <= 0.01) return "green";
+                    if (t2) {
+                        if (d / t2 >= 1 || (1 - (d / t2)) <= 0.01) return "green";
                         if ((d / t2) >= 0.95) return "orange";
                         return "red"
                     }
                     else {
-                        if (d / t1 >=1 || (1 - (d / t1)) <= 0.01) return "green";
+                        if (d / t1 >= 1 || (1 - (d / t1)) <= 0.01) return "green";
                         if ((d / t1) >= 0.95) return "orange";
                         return "red"
                     }
@@ -432,7 +433,7 @@ export class CustomGauge implements IVisual {
         if (type == 0) {
             //horizontal layout.            
             var chartH = (viewPortH) / (rows + 0.5);
-            var chartW = ((viewPortW)  / (cols)) ;
+            var chartW = ((viewPortW) / (cols));
             return {
                 width: chartW,
                 height: chartH
@@ -522,7 +523,7 @@ export class SingleGaugeChart implements IVisual {
             return '#ddd';
         if (d < 0.95)
             return 'red';
-        if (d >= 0.95 &&  d < 0.99)
+        if (d >= 0.95 && d < 0.99)
             return 'orange';
         if (d > 0.99)
             return 'green';
@@ -633,23 +634,24 @@ export class SingleGaugeChart implements IVisual {
         this.root.attr('height', this.config.gaugeHeight);
         this.root.attr('width', this.config.gaugeWidth);
 
-
         this.catLblVertical = oR - 2.5 * this.config.ringWidth;
 
-        this.categoryLbl = this.root.append("text")
+        var texts = this.root.append('g').attr('class' , 'textGroup');
+
+        this.categoryLbl = texts.append("text")
             .attr("transform", this.centerTranslation(this.r, this.catLblVertical))
             .attr("text-anchor", "middle")
             .attr("class", "valueLabelText").attr("class", "categoryText")
 
         //Value
-        this.currentValueLbl = this.root.append("text")
+        this.currentValueLbl = texts.append("text")
             .attr("transform", this.centerTranslation(this.r, this.catLblVertical + this.textVerticalSPacing))
             .attr("text-anchor", "middle")
             .attr("class", "valueLabelText")
 
         // Target1
         if (this.dataViewModel.target1) {
-            this.target1ValueLbl = this.root.append("text")
+            this.target1ValueLbl = texts.append("text")
                 .attr("transform", this.centerTranslation(this.r, this.catLblVertical + 2.5 * this.textVerticalSPacing))
                 .attr("text-anchor", "middle")
                 .attr("class", "valueLabelText")
@@ -666,7 +668,7 @@ export class SingleGaugeChart implements IVisual {
     @logExceptions()
     public update(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction) {
 
-        this.init(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction);      
+        this.init(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction);
 
         var centerTx = this.centerTranslation(this.r, 0.85 * this.r);
         var fillColorFn = this.getFillColor;
@@ -704,35 +706,50 @@ export class SingleGaugeChart implements IVisual {
                 .attr('d', this.arc);
         }
         //Foreground arcs.
-        this.foregroundArc = this.root.append('g');
+        this.foregroundArc = this.root.append('g');     
         this.foregroundArc.attr('class', 'arc')
-            .attr('transform', centerTx);
+            .attr('transform', centerTx);            
 
         var compRatio = 1
         if (this.dataViewModel.target2)
             var compRatio = this.dataViewModel.target1 / this.dataViewModel.target2;
-        this.foregroundArc.selectAll('path')
+        
+        var path = this.foregroundArc.selectAll('path')
             .data(this.tickData)
             .enter().append('path')
             .attr("fill", (d, i) => {
                 return fillColorFn(d, compRatio);
-            }).attr('d', this.arc)
+            }).attr('d', this.arc);       
+        
 
-        // var lg = this.root.append('g')
-        //     .attr('class', 'label')
-        //     .attr('transform', centerTx);
+        var displayStar: boolean = false;
 
-        // lg.selectAll('text')
-        //     .data([this.dataViewModel.target1/this.dataViewModel.target2])
-        //     .enter().append('text')
-        //     .attr('transform', (d: number) => {
-        //         console.log(d);           
-        //         console.log(range);                  
-        //         var newAngle = -90 + (d * range) ; 
-        //         console.log(newAngle);
-        //         return 'rotate(' + newAngle + ') translate(0,' + (lblInset - r) + ')';
-        //     })
-        //     .text("|");
+        //If target acheived the visual will display a golden star next to chart's end.
+        if (this.dataViewModel.targetGapThreshold != -1) {
+            
+            if (this.dataViewModel.target2 && (this.dataViewModel.target2Gap) >= this.dataViewModel.targetGapThreshold) {
+                //if two targets selected.
+                displayStar = true;                
+            } else if ((this.dataViewModel.target1Gap) >= this.dataViewModel.targetGapThreshold) {
+                // if one target selected.
+                displayStar = true;
+            }
+
+            if (displayStar == true) {
+                var lg = this.root.append('g')
+                    .attr('class', 'label')
+                    .attr('transform', centerTx);
+
+                lg.selectAll('text')
+                    .data([1])
+                    .enter().append('text')
+                    .attr('transform', (d: number) => {
+                        var newAngle = -90;
+                        return 'rotate(' + newAngle + ') translate(0,' + 0.95 * this.r + ')';
+                    }).text("\u2B50");
+            }
+
+        }
 
 
         var valueLbl = this.scaleAndRoundValue(this.dataViewModel.value);
@@ -744,8 +761,8 @@ export class SingleGaugeChart implements IVisual {
 
         //Category label.
         this.categoryLbl.text(this.dataViewModel.category)
-            .call (this.wrap , 100 , 0 , this.catLblVertical - this.textVerticalSPacing - iR);
-        
+            .call(this.wrap, 100, 0, this.catLblVertical - this.textVerticalSPacing - iR);
+
 
         if (this.dataViewModel.target2) {
             this.currentValueLbl.text(this.dataViewModel.valueDisplayName + " " + this.config.numberFormat(valueLbl.Value) + valueLbl.Unit + " " + this.config.pecentageFormat(this.dataViewModel.target2Gap));
