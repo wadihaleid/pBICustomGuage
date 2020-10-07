@@ -337,7 +337,7 @@ export class CustomGauge implements IVisual {
                     if (value0.values[i])
                         valuesArray.push(value0.values[i]);
                     else
-                        valuesArray.push('');
+                        valuesArray.push(null);
                 }
             }
 
@@ -349,7 +349,7 @@ export class CustomGauge implements IVisual {
                     if (value1.values[i])
                         target1Array.push(value1.values[i]);
                     else
-                        target1Array.push('');
+                        target1Array.push(null);
                 }
             }
 
@@ -361,7 +361,7 @@ export class CustomGauge implements IVisual {
                     if (value2.values[i])
                         target2Array.push(value2.values[i]);
                     else
-                        target2Array.push('');
+                        target2Array.push(null);
                 }
             }
             model = this.createChartArrayDataViewModel(labelsArray, valuesArray, target1Array, target2Array, category0);
@@ -381,6 +381,9 @@ export class CustomGauge implements IVisual {
             var value: number = values[i];
             var target1: number = targets1[i];
             var target2: number = targets2[i];
+
+            if (value == null || target1 == null)
+                continue;
 
             let item: SingleGaugeChartDataViewModel = {
                 category: labels[i],
@@ -497,8 +500,8 @@ export class SingleGaugeChart implements IVisual {
             majorTicks: 3,
             labelInset: 30,
             labelFormat: d3.format('.0f'),
-            numberFormat: (d) => { return "$" + d3.format(",.0f")(d); },
-            pecentageFormat: (d) => { return "(" + d3.format(",.0f")(d) + "%)"; }
+            numberFormat: (d) => { return "$" + d3.format(",.1f")(d); },
+            pecentageFormat: (d) => { return "(" + d3.format(",.1f")(d) + "%)"; }
         }
     }
 
