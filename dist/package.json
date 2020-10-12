@@ -8,7 +8,7 @@
             "file": "resources/pBICustomGuage628C5A2328964F43B86921677D9D07A3.pbiviz.json"
         }
     ],
-    "visual": {"name":"pBICustomGuage","displayName":"PBICustomGuage","guid":"pBICustomGuage628C5A2328964F43B86921677D9D07A3","visualClassName":"CustomGauge","version":"1.0.0","description":"Custom Gauge Chart","supportUrl":"-","gitHubUrl":""},
+    "visual": {"name":"pBICustomGuage","displayName":"PBICustomGuage","guid":"pBICustomGuage628C5A2328964F43B86921677D9D07A3","visualClassName":"CustomGauge","version":"1.0.0","description":"Custom Gauge Chart","supportUrl":"-","gitHubUrl":"https://github.com/wadihaleid/pBICustomGuage"},
     "metadata": {
         "pbivizjson": {
             "resourceId": "rId0"
