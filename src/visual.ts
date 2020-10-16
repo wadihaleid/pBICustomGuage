@@ -88,6 +88,7 @@ export interface SingleGaugeChartConfig {
     numberFormat: any;
     pecentageFormat: any;
     smallChart: boolean;
+    bigChart: boolean;
 }
 
 export interface VisualMetaData {
@@ -250,7 +251,8 @@ export class CustomGauge implements IVisual {
     private chartLayout: number;
     private allowInteraction: boolean;
     private visualSettings: VisualSettings;
-    smallChart: boolean;
+    private smallChart: boolean;
+    private bigChart: boolean;
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
@@ -286,6 +288,7 @@ export class CustomGauge implements IVisual {
         var viewport = options.viewport;
         this.root.attr('height', viewport.height);
         this.root.attr('width', viewport.width);
+
         let categoriesCount = gaugesDataModel.categories.length;
 
         this.count = categoriesCount;
@@ -293,6 +296,11 @@ export class CustomGauge implements IVisual {
             this.smallChart = true;
         else
             this.smallChart = false;
+
+        if (this.count <= 3)
+            this.bigChart = true;
+        else
+            this.bigChart = false;
 
         this.chartLayout = 0; // Horizontal.
 
@@ -303,11 +311,13 @@ export class CustomGauge implements IVisual {
         if (this.chartLayout == 0) {
             //Horizontal layout . X changes and Y fixed.
             var localX = 0;
+            var localY = 20;
+
             for (var i = 0; i < this.count; i++) {
                 var singleDataModel: SingleGaugeChartDataViewModel = gaugesDataModel.categories[i];
                 this.singleGaugeChartArray[i] = new SingleGaugeChart(singleDataModel, this.selectionManager, this.host);
-                this.singleGaugeChartArray[i].update(this.root, localX, 20, gaugeViewport.width, gaugeViewport.height, gaugeViewport.width,
-                    gaugeViewport.height, gaugeViewport.width, this.allowInteraction, this.smallChart);
+                this.singleGaugeChartArray[i].update(this.root, localX, localY, gaugeViewport.width, gaugeViewport.height, gaugeViewport.width,
+                    gaugeViewport.height, gaugeViewport.width, this.allowInteraction, this.smallChart, this.bigChart);
                 localX = localX + gaugeViewport.width;
             }
         }
@@ -322,57 +332,69 @@ export class CustomGauge implements IVisual {
 
         var model: GaugeChartArrayDataViewModel;
 
+        var categoriesCount = 0;
+
         if (dataView.categorical.categories && dataView.categorical.categories.length > 0) {
             let categories = dataView.categorical.categories;
-            let values = dataView.categorical.values;
-
             category0 = categories[0];
-            var categoriesCount = category0.values.length;
+            categoriesCount = category0.values.length;
+        }
 
-            // tslint:disable-next-line: prefer-array-literal
-            let labelsArray: string[] = [];
+        let values = dataView.categorical.values;
+
+
+
+        let labelsArray: string[] = [];
+        if (categoriesCount == 0) {
+            labelsArray.push("All");
+        }
+        else {
             for (var i = 0; i < categoriesCount; i++) {
                 if (category0.values[i])
                     labelsArray.push(category0.values[i].toString());
             }
-
-            //values array.
-            value0 = values[0];
-            let valuesArray = [];
-            for (var i = 0; i < categoriesCount; i++) {
-                if (value0) {
-                    if (value0.values[i])
-                        valuesArray.push(value0.values[i]);
-                    else
-                        valuesArray.push(null);
-                }
-            }
-
-            //target 1 array
-            value1 = values[1];
-            let target1Array = [];
-            for (var i = 0; i < categoriesCount; i++) {
-                if (value1) {
-                    if (value1.values[i])
-                        target1Array.push(value1.values[i]);
-                    else
-                        target1Array.push(null);
-                }
-            }
-
-            //target 2 array
-            value2 = values[2];
-            let target2Array = [];
-            for (var i = 0; i < categoriesCount; i++) {
-                if (value2) {
-                    if (value2.values[i])
-                        target2Array.push(value2.values[i]);
-                    else
-                        target2Array.push(null);
-                }
-            }
-            model = this.createChartArrayDataViewModel(labelsArray, valuesArray, target1Array, target2Array, category0);
         }
+
+        if (categoriesCount == 0)
+            categoriesCount = 1;
+
+        //values array.
+        value0 = values[0];
+        let valuesArray = [];
+        for (var i = 0; i < categoriesCount; i++) {
+            if (value0) {
+                if (value0.values[i])
+                    valuesArray.push(value0.values[i]);
+                else
+                    valuesArray.push(null);
+            }
+        }
+
+        //target 1 array
+        value1 = values[1];
+        let target1Array = [];
+        for (var i = 0; i < categoriesCount; i++) {
+            if (value1) {
+                if (value1.values[i])
+                    target1Array.push(value1.values[i]);
+                else
+                    target1Array.push(null);
+            }
+        }
+
+        //target 2 array
+        value2 = values[2];
+        let target2Array = [];
+        for (var i = 0; i < categoriesCount; i++) {
+            if (value2) {
+                if (value2.values[i])
+                    target2Array.push(value2.values[i]);
+                else
+                    target2Array.push(null);
+            }
+        }
+        model = this.createChartArrayDataViewModel(labelsArray, valuesArray, target1Array, target2Array, category0);
+
         return model;
     }
 
@@ -382,9 +404,11 @@ export class CustomGauge implements IVisual {
         let singleChartsArray: SingleGaugeChartDataViewModel[] = [];
 
         for (let i = 0; i < labels.length; i++) {
+
             const categorySelectionId = this.host.createSelectionIdBuilder()
                 .withCategory(caterories, i)
                 .createSelectionId();
+
             var value: number = values[i];
             var target1: number = targets1[i];
             var target2: number = targets2[i];
@@ -428,13 +452,19 @@ export class CustomGauge implements IVisual {
         var viewPortW = viewport.width;
         var viewPortH = viewport.height;
 
+        //if big chart.
+        if (count == 1) {
+            return {
+                width: 0.9 * viewPortW,
+                height: 0.9 * viewPortH
+            }
+        }
+
         var cols = 6;
 
         var rows = Math.round(count / (cols))
         if (rows <= 3)
             rows = 4;
-
-        
 
         if (rows > 6) {
             cols = 7;
@@ -470,6 +500,12 @@ export class SingleGaugeChart implements IVisual {
     private arc: any;
     private currentValueLbl: any;
     private target1ValueLbl: any;
+    private target2ValueLbl: any;
+    private target1Tspan: any;
+    private targetGap1Tspan: any;
+    private target2Tspan: any;
+    private targetGap2Tspan: any;
+    private gapValueLbl: any;
     private categoryLbl: any;
     private textVerticalSPacing: number;
     private dataViewModel: SingleGaugeChartDataViewModel;
@@ -479,6 +515,7 @@ export class SingleGaugeChart implements IVisual {
     private host: IVisualHost;
     private targetsCount: number;
     private catLblVertical: number;
+
 
     constructor(_dataViewModel: SingleGaugeChartDataViewModel, _selectionManager: ISelectionManager, _host: IVisualHost) {
         this.setDataViewModel(_dataViewModel);
@@ -490,7 +527,7 @@ export class SingleGaugeChart implements IVisual {
         return new TooltipServiceWrapper(tooltipService, rootElement, handleTouchDelay);
     }
 
-    private configure(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction, _smallChart) {
+    private configure(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction, _smallChart, _bigChart) {
         this.config = {
             element: _element,
             size: _size,
@@ -513,7 +550,8 @@ export class SingleGaugeChart implements IVisual {
             labelFormat: d3.format('.0f'),
             numberFormat: (d) => { return "$" + d3.format(",.1f")(d); },
             pecentageFormat: (d) => { return "(" + d3.format(",.1f")(d) + "%)"; },
-            smallChart: _smallChart
+            smallChart: _smallChart,
+            bigChart: _bigChart
         }
     }
 
@@ -603,9 +641,9 @@ export class SingleGaugeChart implements IVisual {
     }
 
     @logExceptions()
-    public init(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction, _smallChart): void {
+    public init(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction, _smallChart, _bigChart): void {
 
-        this.configure(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction, _smallChart);
+        this.configure(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction, _smallChart, _bigChart);
 
         this.r = this.config.size / 2;
 
@@ -649,23 +687,55 @@ export class SingleGaugeChart implements IVisual {
 
         var texts = this.root.append('g').attr('class', 'textGroup');
 
-        this.categoryLbl = texts.append("text")
-            .attr("transform", this.centerTranslation(this.r, 1.5 * this.catLblVertical))
-            .attr("text-anchor", "middle")
-            .attr("class", "categoryText")
+        if (this.config.bigChart) {
+            this.categoryLbl = texts.append("text")
+                .attr("transform", this.centerTranslation(this.r, this.catLblVertical))
+                .attr("text-anchor", "middle")
+                .attr("class", "categoryTextLarge")
+        } else {
+            this.categoryLbl = texts.append("text")
+                .attr("transform", this.centerTranslation(this.r, 1.35 * this.catLblVertical))
+                .attr("text-anchor", "middle")
+                .attr("class", "categoryText")
+        }
 
         //Value
         this.currentValueLbl = texts.append("text")
-            .attr("transform", this.centerTranslation(this.r, this.catLblVertical + 1.75 * this.textVerticalSPacing))
+            .attr("transform", this.centerTranslation(this.r, this.catLblVertical + 1.25 * this.textVerticalSPacing))
             .attr("text-anchor", "middle")
             .attr("class", "valueLabelText")
 
         // Target1
         if (this.dataViewModel.target1) {
+            var y = this.catLblVertical + 2.75 * this.textVerticalSPacing;
             this.target1ValueLbl = texts.append("text")
-                .attr("transform", this.centerTranslation(this.r, this.catLblVertical + 2.5 * this.textVerticalSPacing))
+                .attr("transform", this.centerTranslation(this.r, y))
                 .attr("text-anchor", "middle")
-                .attr("class", "valueLabelText")
+                .attr("class", "valueLabelText");
+
+            this.target1Tspan = this.target1ValueLbl.append('tspan');
+            this.targetGap1Tspan = this.target1ValueLbl.append('tspan');
+        }
+
+        if (this.dataViewModel.target2) {
+            var y = this.catLblVertical + 3.5 * this.textVerticalSPacing;
+            this.target2ValueLbl = texts.append("text")
+                .attr("transform", this.centerTranslation(this.r, y))
+                .attr("text-anchor", "middle")
+                .attr("class", "valueLabelText");
+
+            this.target2Tspan = this.target2ValueLbl.append('tspan');
+            this.targetGap2Tspan = this.target2ValueLbl.append('tspan');
+
+            if (this.config.bigChart) {
+                this.target2ValueLbl = this.target2ValueLbl.attr("class", "textLarge");
+            }
+
+        }
+
+        if (this.config.bigChart) {
+            this.currentValueLbl = this.currentValueLbl.attr("class", "textLarge");
+            this.target1ValueLbl = this.target1ValueLbl.attr("class", "textLarge");
         }
 
         this.tooltipServiceWrapper = this.createTooltipServiceWrapper(this.host.tooltipService, this.root);
@@ -679,11 +749,15 @@ export class SingleGaugeChart implements IVisual {
 
     // tslint:disable-next-line: max-func-body-length
     @logExceptions()
-    public update(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction, _smallChart) {
+    public update(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction, _smallChart, _bigChart) {
 
-        this.init(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction, _smallChart);
+        this.init(_element, _x, _y, _size, _height, _width, _clipHeight, _clipWidth, _enableInteraction, _smallChart, _bigChart);
 
         var centerTx = this.centerTranslation(this.r, 0.85 * this.r);
+
+        if (this.config.bigChart)
+            centerTx = this.centerTranslation(this.r, this.r);
+
         var fillColorFn = this.getFillColor;
         //outer radius
         var oR = this.r - this.config.ringInset;
@@ -720,6 +794,8 @@ export class SingleGaugeChart implements IVisual {
         }
         //Foreground arcs.
         this.foregroundArc = this.root.append('g');
+
+
         this.foregroundArc.attr('class', 'arc')
             .attr('transform', centerTx);
 
@@ -734,21 +810,20 @@ export class SingleGaugeChart implements IVisual {
                 return fillColorFn(d, compRatio);
             }).attr('d', this.arc);
 
-
         var displayStar: boolean = false;
 
         //If target acheived the visual will display a golden star next to chart's end.
         if (this.dataViewModel.targetGapThreshold != -1) {
 
-            if (this.dataViewModel.value >= 5000000) {
-                if (this.dataViewModel.target2 && (this.dataViewModel.target2Gap) >= this.dataViewModel.targetGapThreshold) {
-                    //if two targets selected.
-                    displayStar = true;
-                } else if ((this.dataViewModel.target1Gap) >= this.dataViewModel.targetGapThreshold) {
-                    // if one target selected.
-                    displayStar = true;
-                }
+
+            if (this.dataViewModel.target2 && (this.dataViewModel.target2Gap) >= this.dataViewModel.targetGapThreshold) {
+                //if two targets selected.
+                displayStar = true;
+            } else if ((this.dataViewModel.target1Gap) >= this.dataViewModel.targetGapThreshold) {
+                // if one target selected.
+                displayStar = true;
             }
+
 
             if (displayStar == true) {
                 var lg = this.root.append('g')
@@ -774,36 +849,43 @@ export class SingleGaugeChart implements IVisual {
 
         //Category label.
 
-        //label inside chart.                
-
-
-        if (this.config.smallChart)
+        //label inside chart.           
+        if (this.config.smallChart) {
             if (this.dataViewModel.category.length >= 30) {
                 this.categoryLbl.text(this.dataViewModel.category).attr('class', 'categoryTextSmall')
-                    .call(this.wrap, 50, 0, this.catLblVertical - 2.25 * this.textVerticalSPacing - iR);
+                    .call(this.wrap, 50, 0, this.catLblVertical - this.textVerticalSPacing - iR);
             } else {
                 this.categoryLbl.text(this.dataViewModel.category).attr('class', 'categoryTextSmall')
-                    .call(this.wrap, 100, 0, this.catLblVertical - 1.5 * this.textVerticalSPacing - iR);
+                    .call(this.wrap, 100, 0, this.catLblVertical - 0.8 * this.textVerticalSPacing - iR);
             }
-        else
+        }
+        else {
             if (this.dataViewModel.category.length >= 50) {
                 this.categoryLbl.text(this.dataViewModel.category).attr('class', 'categoryTextSmall')
-                    .call(this.wrap, 100, 0, this.catLblVertical - 3 * this.textVerticalSPacing - iR);
+                    .call(this.wrap, 100, 0, this.catLblVertical - 1.5 * this.textVerticalSPacing - iR);
             } else
                 this.categoryLbl.text(this.dataViewModel.category)
                     .call(this.wrap, 100, 0, this.catLblVertical - 1.5 * this.textVerticalSPacing - iR);
-
+        }
 
         if (this.dataViewModel.target2) {
-            this.currentValueLbl.text(this.dataViewModel.valueDisplayName + " " + this.config.numberFormat(valueLbl.Value) + valueLbl.Unit + " " + this.config.pecentageFormat(this.dataViewModel.target2Gap));
-            this.target1ValueLbl.text(this.dataViewModel.target1DisplayName + " " +
-                this.config.numberFormat(target1Lbl.Value) +
-                target1Lbl.Unit + " ," +
-                this.dataViewModel.target2DisplayName + " " + this.config.numberFormat(target2Lbl.Value) + target2Lbl.Unit);
-        } else {
-            this.currentValueLbl.transition().text(this.dataViewModel.valueDisplayName + " " + this.config.numberFormat(valueLbl.Value) + valueLbl.Unit + " " + this.config.pecentageFormat(this.dataViewModel.target1Gap));
-            this.target1ValueLbl.transition().text(this.dataViewModel.target1DisplayName + " " +
+            this.currentValueLbl.text(this.dataViewModel.valueDisplayName + " " + this.config.numberFormat(valueLbl.Value) + valueLbl.Unit);
+            //target1 
+            this.target1Tspan.text(this.dataViewModel.target1DisplayName + " " +
                 this.config.numberFormat(target1Lbl.Value) + target1Lbl.Unit)
+            this.targetGap1Tspan.text(",Gap " + this.config.pecentageFormat(this.dataViewModel.target1Gap));
+
+            //target2
+            this.target2Tspan.text(this.dataViewModel.target2DisplayName + " " +
+                this.config.numberFormat(target2Lbl.Value) + target2Lbl.Unit)
+            this.targetGap2Tspan.text(",Gap " + this.config.pecentageFormat(this.dataViewModel.target2Gap));
+
+        } else {
+            this.currentValueLbl.text(this.dataViewModel.valueDisplayName + " " + this.config.numberFormat(valueLbl.Value) + valueLbl.Unit);
+            this.target1Tspan.text(this.dataViewModel.target1DisplayName + " " +
+                this.config.numberFormat(target1Lbl.Value) + target1Lbl.Unit)
+            this.targetGap1Tspan.text(",Gap " + this.config.pecentageFormat(this.dataViewModel.target1Gap));
+
         }
 
         this.tooltipServiceWrapper.addTooltip(this.root.selectAll('.arc'),
