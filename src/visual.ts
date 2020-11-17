@@ -24,6 +24,7 @@ import { VisualSettings } from "./settings";
 import { createTooltipServiceWrapper, TooltipEventArgs, ITooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
+import { Numeric } from "d3";
 
 export interface SingleGuageChartUpdateOptions {
 }
@@ -54,6 +55,10 @@ export interface SingleGaugeChartDataViewModel {
     };
     color(d, t1, t2): string;
     selectionId: ISelectionId;
+    fill1: string;
+    fill2: string;
+    gap1Tolerance : number;
+    gap2Tolerance : number;
 }
 
 export interface SingleGaugeChartInitOptions {
@@ -88,7 +93,7 @@ export interface SingleGaugeChartConfig {
     numberFormat: any;
     pecentageFormat: any;
     smallChart: boolean;
-    bigChart: boolean;
+    bigChart: boolean;    
 }
 
 export interface VisualMetaData {
@@ -315,7 +320,7 @@ export class CustomGauge implements IVisual {
 
             for (var i = 0; i < this.count; i++) {
                 var singleDataModel: SingleGaugeChartDataViewModel = gaugesDataModel.categories[i];
-                this.singleGaugeChartArray[i] = new SingleGaugeChart(singleDataModel, this.selectionManager, this.host);
+                this.singleGaugeChartArray[i] = new SingleGaugeChart(singleDataModel, this.selectionManager, this.host , this.visualSettings.gauge.TextVerticalSpacing);
                 this.singleGaugeChartArray[i].update(this.root, localX, localY, gaugeViewport.width, gaugeViewport.height, gaugeViewport.width,
                     gaugeViewport.height, gaugeViewport.width, this.allowInteraction, this.smallChart, this.bigChart);
                 localX = localX + gaugeViewport.width;
@@ -341,12 +346,10 @@ export class CustomGauge implements IVisual {
         }
 
         let values = dataView.categorical.values;
-
-
-
         let labelsArray: string[] = [];
         if (categoriesCount == 0) {
-            labelsArray.push("All");
+            var blankCategory = this.visualSettings.gauge.BlankCategory;
+            labelsArray.push(blankCategory);
         }
         else {
             for (var i = 0; i < categoriesCount; i++) {
@@ -421,20 +424,24 @@ export class CustomGauge implements IVisual {
                 value: value,
                 target1: target1,
                 target2: target2,
-                numberFormatter: (d) => { return "$" + d3.format(",.0f")(d); },
-                percentageFormatter: (d) => { if (d < 0) return "(" + d3.format(",.0f")(d) + "%)"; else return d3.format(",.0f")(d) + "%" },
+                numberFormatter: (d) => { return "$" + d3.format(",.2f")(d); },
+                percentageFormatter: (d) => { if (d < 0) return "(" + d3.format(",.2f")(d) + "%)"; else return d3.format(",.2f")(d) + "%" },
                 valueDisplayName: this.visualSettings.gauge.valueLabel,
                 target1DisplayName: this.visualSettings.gauge.target1Label,
                 target2DisplayName: this.visualSettings.gauge.target2Label,
                 targetGapThreshold: this.visualSettings.gauge.GapThreshold,
+                fill1 : this.visualSettings.gauge.fill1,
+                fill2 : this.visualSettings.gauge.fill2,
+                gap1Tolerance : this.visualSettings.gauge.Gap1Tolerence,
+                gap2Tolerance : this.visualSettings.gauge.Gap2Tolerence,
                 tooltip: {
                     target1Label: this.visualSettings.gauge.target1Tooltip,
                     target2Label: this.visualSettings.gauge.target2Tooltip,
                     valueLabel: this.visualSettings.gauge.valueTooltip
                 },
                 color: (d, t1, t2) => {
-                    if (d / t1 >= 1 || (1 - (d / t1)) <= 0.01) return "green";
-                    if ((d / t1) >= 0.95) return "orange";
+                    if (d / t1 >= 1 || (1 - (d / t1)) <= 1 - this.visualSettings.gauge.Gap2Tolerence) return this.visualSettings.gauge.fill2;
+                    if ((d / t1) >= this.visualSettings.gauge.Gap1Tolerence) return this.visualSettings.gauge.fill1;
                     return "red"
                 },
                 target1Gap: 100 * (value - target1) / target1,
@@ -517,10 +524,11 @@ export class SingleGaugeChart implements IVisual {
     private catLblVertical: number;
 
 
-    constructor(_dataViewModel: SingleGaugeChartDataViewModel, _selectionManager: ISelectionManager, _host: IVisualHost) {
+    constructor(_dataViewModel: SingleGaugeChartDataViewModel, _selectionManager: ISelectionManager, _host: IVisualHost , _textVerticalSpacing : number) {
         this.setDataViewModel(_dataViewModel);
         this.setSelectionManager(_selectionManager);
         this.setHost(_host);
+        this.textVerticalSPacing = _textVerticalSpacing;
     }
 
     private createTooltipServiceWrapper(tooltipService: ITooltipService, rootElement: any, handleTouchDelay: number = 1): ITooltipServiceWrapper {
@@ -547,9 +555,9 @@ export class SingleGaugeChart implements IVisual {
             transitionMs: 750,
             majorTicks: 3,
             labelInset: 30,
-            labelFormat: d3.format('.0f'),
-            numberFormat: (d) => { return "$" + d3.format(",.1f")(d); },
-            pecentageFormat: (d) => { return "(" + d3.format(",.1f")(d) + "%)"; },
+            labelFormat: d3.format('.2f'),
+            numberFormat: (d) => { return "$" + d3.format(",.2f")(d); },
+            pecentageFormat: (d) => { return "(" + d3.format(",.2f")(d) + "%)"; },
             smallChart: _smallChart,
             bigChart: _bigChart
         }
@@ -571,15 +579,15 @@ export class SingleGaugeChart implements IVisual {
         return deg * Math.PI / 180;
     }
 
-    private getFillColor(d, compRatio) {
+    private getFillColor(d, compRatio , gap1Tolerance , fill1 , gap2Tolerance , fill2) {
         if (d == -1 && compRatio === undefined)
             return '#ddd';
-        if (d < 0.95)
+        if (d < gap1Tolerance)
             return 'red';
-        if (d >= 0.95 && d < 0.99)
-            return 'orange';
-        if (d > 0.99)
-            return 'green';
+        if (d >= gap1Tolerance && d < gap2Tolerance)
+            return fill1;
+        if (d > gap2Tolerance)
+            return fill2;
     }
 
     private getTicks(): number[] {
@@ -589,7 +597,7 @@ export class SingleGaugeChart implements IVisual {
     /** Function to return values rounded to closest ten power.
 
      */
-    private scaleAndRoundValue(d: number): { "Value": number, "Unit": string } {
+    private scaleAndRoundValue(d: number): { "Value": string, "Unit": string } {
         if (d) {
             var p = 10;
             //return values rounded to 1M or 1K
@@ -597,19 +605,23 @@ export class SingleGaugeChart implements IVisual {
                 var power: number = Math.pow(p, i);
                 var unit: string = "";
                 if (d >= power) {
-                    if (power == 1000000)
-                        unit = "M"
-                    if (power < 1000000 && power >= 1000)
-                        unit = "K"
-                    return {
-                        "Value": Math.round(d / Math.pow(p, i)),
-                        "Unit": unit
+                    if (power == 1000000){                        
+                        return {
+                            "Value": (d / Math.pow(p, i)).toFixed(3),
+                            "Unit": "M"
+                        }
+                    }                        
+                    if (power < 1000000 && power >= 1000){
+                        return {
+                            "Value": (d / 1000).toFixed(3),
+                            "Unit": "K"
+                        }
                     }
                 }
             }
             //else return value wihout rounding
             return {
-                "Value": d,
+                "Value": d.toFixed(3),
                 "Unit": ""
             }
         }
@@ -654,7 +666,7 @@ export class SingleGaugeChart implements IVisual {
         var iR = oR - this.config.ringWidth;
 
         var range = this.config.maxAngle - this.config.minAngle;
-        this.textVerticalSPacing = 15
+        this.textVerticalSPacing = this.textVerticalSPacing;
 
         this.root = this.config.element
             .append('svg').attr('class', 'gauge');
@@ -803,11 +815,16 @@ export class SingleGaugeChart implements IVisual {
         if (this.dataViewModel.target2)
             var compRatio = this.dataViewModel.target1 / this.dataViewModel.target2;
 
+        var fill1 : string = this.dataViewModel.fill1;
+        var fill2 : string = this.dataViewModel.fill2;
+        var gap1Tolerance : number = this.dataViewModel.gap1Tolerance;
+        var gap2Tolerance : number = this.dataViewModel.gap2Tolerance;
+
         var path = this.foregroundArc.selectAll('path')
             .data(this.tickData)
             .enter().append('path')
             .attr("fill", (d, i) => {
-                return fillColorFn(d, compRatio);
+                return fillColorFn(d, compRatio , gap1Tolerance , fill1 , gap2Tolerance , fill2);
             }).attr('d', this.arc);
 
         var displayStar: boolean = false;

@@ -39,6 +39,42 @@
                         "text": true
                     }
                 },
+                "fill1": {
+                    "displayName": "Target 1 fill color",
+                    "displayNameKey": "Visual_Fill1",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }                            
+                        }
+                    }
+                },
+                "Gap1Tolerence" : {
+                    "displayName": "Target1 gap tolerance",
+                    "description": "",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "fill2": {
+                    "displayName": "Target 2 fill color",
+                    "displayNameKey": "Visual_Fill1",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }                            
+                        }
+                    }
+                },
+                "Gap2Tolerence" : {
+                    "displayName": "Target2 gap tolerance",
+                    "description": "",
+                    "type": {
+                        "numeric": true
+                    }
+                },
                 "target1Label": {
                     "displayName": "Target1 Name",
                     "description": "Name to be given to target1 field",
@@ -70,6 +106,20 @@
                 "GapThreshold" : {
                     "displayName": "Target achievement Percentage",
                     "description": "Name to be given to target2 field",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "BlankCategory" : {
+                    "displayName": "Blank Category Value",
+                    "description": "Value to be used in case categories are blanks",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "TextVerticalSpacing" : {
+                    "displayName": "Vertical spacing",
+                    "description": "Spacing between lines",
                     "type": {
                         "numeric": true
                     }

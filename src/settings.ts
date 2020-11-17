@@ -26,6 +26,7 @@
 
 "use strict";
 
+import { color, Color } from "d3";
 import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
 import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
 
@@ -41,4 +42,10 @@ export class GaugeSettings {
   public target1Tooltip : string = "" 
   public target2Tooltip : string = "" 
   public GapThreshold : number = -1;
+  public BlankCategory : string = "All";
+  public TextVerticalSpacing : number = 15;
+  public fill1 : string = "white";
+  public Gap1Tolerence : number = 0.95;
+  public fill2 : string = "white";
+  public Gap2Tolerence : number = 0.99;
 }
