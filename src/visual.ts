@@ -59,6 +59,7 @@ export interface SingleGaugeChartDataViewModel {
     fill2: string;
     gap1Tolerance : number;
     gap2Tolerance : number;
+    bigChart : boolean;
 }
 
 export interface SingleGaugeChartInitOptions {
@@ -256,8 +257,7 @@ export class CustomGauge implements IVisual {
     private chartLayout: number;
     private allowInteraction: boolean;
     private visualSettings: VisualSettings;
-    private smallChart: boolean;
-    private bigChart: boolean;
+    private smallChart: boolean;    
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
@@ -300,16 +300,9 @@ export class CustomGauge implements IVisual {
         if (this.count >= 35)
             this.smallChart = true;
         else
-            this.smallChart = false;
+            this.smallChart = false;        
 
-        if (this.count <= 3)
-            this.bigChart = true;
-        else
-            this.bigChart = false;
-
-        this.chartLayout = 0; // Horizontal.
-
-        var gaugeViewport = this.getGaugeSize(viewport, this.count, this.chartLayout);
+        this.chartLayout = 0; // Horizontal.        
 
         // Create new charts.
         this.singleGaugeChartArray = new Array();
@@ -320,9 +313,10 @@ export class CustomGauge implements IVisual {
 
             for (var i = 0; i < this.count; i++) {
                 var singleDataModel: SingleGaugeChartDataViewModel = gaugesDataModel.categories[i];
+                var gaugeViewport = this.getGaugeSize(viewport, this.count, this.chartLayout , singleDataModel.bigChart);
                 this.singleGaugeChartArray[i] = new SingleGaugeChart(singleDataModel, this.selectionManager, this.host , this.visualSettings.gauge.TextVerticalSpacing);
                 this.singleGaugeChartArray[i].update(this.root, localX, localY, gaugeViewport.width, gaugeViewport.height, gaugeViewport.width,
-                    gaugeViewport.height, gaugeViewport.width, this.allowInteraction, this.smallChart, this.bigChart);
+                    gaugeViewport.height, gaugeViewport.width, this.allowInteraction, this.smallChart, singleDataModel.bigChart);
                 localX = localX + gaugeViewport.width;
             }
         }
@@ -336,6 +330,7 @@ export class CustomGauge implements IVisual {
         var value2: DataViewValueColumn;
 
         var model: GaugeChartArrayDataViewModel;
+        var _bigChart : boolean = false;
 
         var categoriesCount = 0;
 
@@ -358,8 +353,10 @@ export class CustomGauge implements IVisual {
             }
         }
 
-        if (categoriesCount == 0)
+        if (categoriesCount == 0){
             categoriesCount = 1;
+            _bigChart = true;
+        }
 
         //values array.
         value0 = values[0];
@@ -396,13 +393,13 @@ export class CustomGauge implements IVisual {
                     target2Array.push(null);
             }
         }
-        model = this.createChartArrayDataViewModel(labelsArray, valuesArray, target1Array, target2Array, category0);
+        model = this.createChartArrayDataViewModel(labelsArray, valuesArray, target1Array, target2Array, category0 , _bigChart);
 
         return model;
     }
 
 
-    private createChartArrayDataViewModel(labels: string[], values = [], targets1 = [], targets2 = [], caterories: DataViewCategoryColumn): GaugeChartArrayDataViewModel {
+    private createChartArrayDataViewModel(labels: string[], values = [], targets1 = [], targets2 = [], caterories: DataViewCategoryColumn , _bigChart : boolean): GaugeChartArrayDataViewModel {
         var model: GaugeChartArrayDataViewModel;
         let singleChartsArray: SingleGaugeChartDataViewModel[] = [];
 
@@ -446,7 +443,8 @@ export class CustomGauge implements IVisual {
                 },
                 target1Gap: 100 * (value - target1) / target1,
                 target2Gap: 100 * (value - target2) / target2,
-                selectionId: categorySelectionId
+                selectionId: categorySelectionId,
+                bigChart : _bigChart
             }
             singleChartsArray.push(item);
         }
@@ -455,12 +453,12 @@ export class CustomGauge implements IVisual {
         return model;
     }
 
-    private getGaugeSize(viewport: IViewport, count: number, type: number): IViewport {
+    private getGaugeSize(viewport: IViewport, count: number, type: number , _bigChart:boolean): IViewport {
         var viewPortW = viewport.width;
         var viewPortH = viewport.height;
 
         //if big chart.
-        if (count == 1) {
+        if (_bigChart) {
             return {
                 width: 0.9 * viewPortW,
                 height: 0.9 * viewPortH
